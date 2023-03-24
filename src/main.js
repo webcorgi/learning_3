@@ -151,13 +151,16 @@ function draw() {
 		}
 
 		if (player.moving) {
+			const speed = isShiftPressed ? 0.1 : 0.05;
+
 			// 걸어가는 상태
 			angle = Math.atan2(
 				destinationPoint.z - player.modelMesh.position.z,
 				destinationPoint.x - player.modelMesh.position.x
 			);
-			player.modelMesh.position.x += Math.cos(angle) * 0.05;
-			player.modelMesh.position.z += Math.sin(angle) * 0.05;
+
+			player.modelMesh.position.x += Math.cos(angle) * speed;
+			player.modelMesh.position.z += Math.sin(angle) * speed;
 
 			camera.position.x = cameraPosition.x + player.modelMesh.position.x;
 			camera.position.z = cameraPosition.z + player.modelMesh.position.z;
@@ -171,6 +174,7 @@ function draw() {
 			) {
 				player.moving = false;
 				console.log('멈춤');
+				console.log(house)
 			}
 
 			if (
@@ -227,10 +231,12 @@ function draw() {
 	renderer.setAnimationLoop(draw);
 }
 
+// let houseClicked = false;
 function checkIntersects() {
-	// raycaster.setFromCamera(mouse, camera);
 
-	const intersects = raycaster.intersectObjects(meshes);
+	raycaster.setFromCamera(mouse, camera);
+	const intersects = raycaster.intersectObjects([...meshes, house.modelMesh]);
+
 	for (const item of intersects) {
 		if (item.object.name === 'floor') {
 			destinationPoint.x = item.point.x;
@@ -238,12 +244,15 @@ function checkIntersects() {
 			destinationPoint.z = item.point.z;
 			player.modelMesh.lookAt(destinationPoint);
 
-			// console.log(item.point)
-
 			player.moving = true;
 
 			pointerMesh.position.x = destinationPoint.x;
 			pointerMesh.position.z = destinationPoint.z;
+		}  else if (item.object === house.modelMesh) {
+			/* if(!houseClicked){
+				alert('hi');
+				houseClicked = true;
+			} */
 		}
 		break;
 	}
@@ -303,5 +312,58 @@ canvas.addEventListener('touchmove', e => {
 		calculateMousePosition(e.touches[0]);
 	}
 });
+
+// player => space key 점프
+let isJumping = false;
+document.addEventListener('keydown', e => {
+	if (e.code === 'Space' && !isJumping) {
+		isJumping = true;
+		jump();
+	}
+});
+function jump() {
+	const jumpHeight = 1;
+	const jumpDuration = 0.5;
+	const jumpEase = 'Power2.easeOut';
+
+	const startPosition = player.modelMesh.position.clone();
+	const endPosition = player.modelMesh.position.clone().add(new THREE.Vector3(0, jumpHeight, 0));
+
+	gsap.to(
+		player.modelMesh.position,
+		{
+			duration: jumpDuration,
+			y: endPosition.y,
+			ease: jumpEase,
+			onComplete: () => {
+				gsap.to(
+					player.modelMesh.position,
+					{
+						duration: jumpDuration,
+						y: startPosition.y,
+						ease: jumpEase,
+						onComplete: () => {
+							isJumping = false;
+						}
+					}
+				);
+			}
+		}
+	);
+}
+
+// player => shift key 달리기
+let isShiftPressed = false;
+document.addEventListener('keydown', e => {
+	if (e.key === 'Shift') {
+	  isShiftPressed = true;
+	}
+});
+document.addEventListener('keyup', e => {
+	if (e.key === 'Shift') {
+	  isShiftPressed = false;
+	}
+});
+
 
 draw();
