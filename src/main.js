@@ -6,10 +6,11 @@ import gsap from 'gsap';
 
 // Texture
 const textureLoader = new THREE.TextureLoader();
-const floorTexture = textureLoader.load('/images/grid.png');
+// const floorTexture = textureLoader.load('/images/grid.png');
+const floorTexture = textureLoader.load('/images/space.jpg');
 floorTexture.wrapS = THREE.RepeatWrapping;
 floorTexture.wrapT = THREE.RepeatWrapping;
-floorTexture.repeat.x = 10;
+floorTexture.repeat.x = 10; // 반복 횟수
 floorTexture.repeat.y = 10;
 
 // Renderer
@@ -21,12 +22,13 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 그림자 부드럽게
 
 // Scene
 const scene = new THREE.Scene();
 
 // Camera
+// OrthographicCamera 직교카메라 => 객체들이 어디있든 동일한 크기로 보여줌
 const camera = new THREE.OrthographicCamera(
 	-(window.innerWidth / window.innerHeight), // left
 	window.innerWidth / window.innerHeight, // right,
@@ -35,9 +37,7 @@ const camera = new THREE.OrthographicCamera(
 	-100,
 	100
 );
-
-
-const cameraPosition = new THREE.Vector3(1,4,5); // x,y,z
+const cameraPosition = new THREE.Vector3(1,5,5); // x,y,z
 camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 camera.zoom = 0.2;
 camera.updateProjectionMatrix();
@@ -54,9 +54,11 @@ directionalLight.position.y = directionalLightOriginPosition.y;
 directionalLight.position.z = directionalLightOriginPosition.z;
 directionalLight.castShadow = true;
 
-// mapSize 세팅으로 그림자 퀄리티 설정
+// mapSize 세팅으로 그림자 퀄리티 설정 (default 512)
+// 숫자 너무높게하면 성능에 영향미쳐서 렉걸림
 directionalLight.shadow.mapSize.width = 2048;
 directionalLight.shadow.mapSize.height = 2048;
+
 // 그림자 범위
 directionalLight.shadow.camera.left = -100;
 directionalLight.shadow.camera.right = 100;
@@ -125,7 +127,7 @@ const player = new Player({
 });
 
 // Ray casting => 가상의 공간에 보이지 않는 빛(Ray)을 투사해 빛에 닿는 표면을 파악하는 기술
-// Raycaster() => 장면에서 광선을 투사하고 광선과 교차하는 객체를 결정
+// Raycaster() => 좌표 클릭했을 때 빛을 쏴서 위치 측정
 const raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 let destinationPoint = new THREE.Vector3();
@@ -140,12 +142,12 @@ function draw() {
 
 	if (player.mixer) player.mixer.update(delta);
 
+	// 하늘에 있는 카메라가 플레이어를 보게 함.
 	if (player.modelMesh) {
 		camera.lookAt(player.modelMesh.position);
 	}
 
 	if (player.modelMesh) {
-
 		if (isPressed) {
 			raycasting();
 		}
@@ -153,18 +155,22 @@ function draw() {
 		if (player.moving) {
 			const speed = isShiftPressed ? 0.1 : 0.05;
 
-			// 걸어가는 상태
+			// 걸어가는 상태 
+			// atan2 => 대각선으로 걸어갈때의 삼각 위치 값을 구해주는 함수
 			angle = Math.atan2(
 				destinationPoint.z - player.modelMesh.position.z,
 				destinationPoint.x - player.modelMesh.position.x
 			);
 
+			// 플레이어 움직일 위치 넣어주기
 			player.modelMesh.position.x += Math.cos(angle) * speed;
 			player.modelMesh.position.z += Math.sin(angle) * speed;
 
+			// 플레이어가 움직일 때 카메라도 따라 움직이게
 			camera.position.x = cameraPosition.x + player.modelMesh.position.x;
 			camera.position.z = cameraPosition.z + player.modelMesh.position.z;
 			
+			// 걷는 동작으로 변경
 			player.actions[0].stop();
 			player.actions[1].play();
 			
@@ -222,8 +228,8 @@ function draw() {
 			}
 		} else {
 			// 서 있는 상태
-			player.actions[1].stop();
-			player.actions[0].play();
+			player.actions[1].stop(); // 서 있는 상태
+			player.actions[0].play(); // 걷는 상태
 		}
 	}
 
@@ -239,13 +245,15 @@ function checkIntersects() {
 
 	for (const item of intersects) {
 		if (item.object.name === 'floor') {
+			// destinationPoint = 목표 지점
 			destinationPoint.x = item.point.x;
 			destinationPoint.y = 0.3;
 			destinationPoint.z = item.point.z;
-			player.modelMesh.lookAt(destinationPoint);
+			player.modelMesh.lookAt(destinationPoint); // 걸어가는 방향으로 캐릭터가 바라본다
 
 			player.moving = true;
 
+			// 클릭한 곳에 나오는 빨간포인터 정사각형
 			pointerMesh.position.x = destinationPoint.x;
 			pointerMesh.position.z = destinationPoint.z;
 		}  else if (item.object === house.modelMesh) {
