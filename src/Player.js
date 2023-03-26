@@ -24,9 +24,12 @@ export class Player {
 				this.actions = [];
 		
 				this.mixer = new AnimationMixer(this.modelMesh);
+				// glb.animations[0]. [1] => 블랜더에서 작업한 애니메이션이 들어가있다
 				this.actions[0] = this.mixer.clipAction(glb.animations[0]);
 				this.actions[1] = this.mixer.clipAction(glb.animations[1]);
 				this.actions[0].play();
+				// this.actions[0].repetitions = 1 // 동작 몇번반복 ? 안정하면 무한인듯
+				// this.actions[0].clampWhenFinished = true // 애니메이션 끝난 모션을 유지하고 싶을때
 			}
 		);
 	}

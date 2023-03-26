@@ -123,7 +123,9 @@ const player = new Player({
 	scene,
 	meshes,
 	gltfLoader,
+	// modelSrc: '/models/girl.glb'
 	modelSrc: '/models/ilbuni.glb'
+	// modelSrc: '/models/body.glb'
 });
 
 // Ray casting => 가상의 공간에 보이지 않는 빛(Ray)을 투사해 빛에 닿는 표면을 파악하는 기술
